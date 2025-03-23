@@ -61,6 +61,19 @@ const ProductCustomizer = () => {
   const [selectedRoutes, setSelectedRoutes] = useState<USPSRoute[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   
+  // Handle file uploads and create previews
+  const handleFrontFileSelect = (file: File) => {
+    setFrontImage(file);
+    const preview = URL.createObjectURL(file);
+    setFrontPreview(preview);
+  };
+  
+  const handleBackFileSelect = (file: File) => {
+    setBackImage(file);
+    const preview = URL.createObjectURL(file);
+    setBackPreview(preview);
+  };
+  
   // Calculate current price
   const [pricePerPiece, setPricePerPiece] = useState(0);
   const [totalPrice, setTotalPrice] = useState(0);
@@ -420,23 +433,13 @@ const ProductCustomizer = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <DesignUploader 
                 side="front"
-                onFileSelect={(file) => {
-                  setFrontImage(file);
-                  // Create preview URL
-                  const previewUrl = URL.createObjectURL(file);
-                  setFrontPreview(previewUrl);
-                }}
+                onFileSelect={handleFrontFileSelect}
               />
               
               {form.watch('printType') === 'double' && (
                 <DesignUploader 
                   side="back"
-                  onFileSelect={(file) => {
-                    setBackImage(file);
-                    // Create preview URL
-                    const previewUrl = URL.createObjectURL(file);
-                    setBackPreview(previewUrl);
-                  }}
+                  onFileSelect={handleBackFileSelect}
                 />
               )}
             </div>
