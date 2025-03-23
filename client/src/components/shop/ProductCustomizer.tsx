@@ -74,6 +74,12 @@ const ProductCustomizer = () => {
     setBackPreview(preview);
   };
   
+  // Helper to safely remove null from uploaded files
+  const safeUpload = async (file: File | null): Promise<string | null> => {
+    if (!file) return null;
+    return await uploadDesignFile(file);
+  };
+  
   // Calculate current price
   const [pricePerPiece, setPricePerPiece] = useState(0);
   const [totalPrice, setTotalPrice] = useState(0);
@@ -116,9 +122,9 @@ const ProductCustomizer = () => {
     setIsUploading(true);
     
     try {
-      // Upload images to Supabase
-      const frontImageUrl = await uploadDesignFile(frontImage);
-      const backImageUrl = data.printType === 'double' ? await uploadDesignFile(backImage) : null;
+      // Upload images to Supabase using our safe helper
+      const frontImageUrl = await safeUpload(frontImage);
+      const backImageUrl = data.printType === 'double' ? await safeUpload(backImage) : null;
       
       if (!frontImageUrl) {
         throw new Error("Failed to upload front image");
