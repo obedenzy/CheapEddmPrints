@@ -487,6 +487,17 @@ const ProductCustomizer = () => {
                 {form.watch('printType') === 'single' ? '4/0 Single Sided' : '4/4 Double Sided'}
               </span>
             </div>
+            
+            {/* USPS Routes Summary */}
+            <div className="flex justify-between">
+              <span className="text-gray-600">USPS Routes</span>
+              <span>
+                {selectedRoutes.length > 0 
+                  ? `${selectedRoutes.length} routes (${selectedRoutes.reduce((sum, route) => sum + route.totalAddresses, 0).toLocaleString()} addresses)`
+                  : 'None selected'}
+              </span>
+            </div>
+            
             <div className="flex justify-between">
               <span className="text-gray-600">Delivery Time</span>
               <span>7-10 Business Days</span>

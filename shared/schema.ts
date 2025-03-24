@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, decimal } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, decimal, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -71,6 +71,25 @@ export const orderItems = pgTable("order_items", {
   totalPrice: decimal("total_price", { precision: 10, scale: 2 }).notNull(),
 });
 
+// Demographics table for USPS EDDM routes
+export const demographics = pgTable("demographics", {
+  id: serial("id").primaryKey(),
+  routeId: varchar("route_id", { length: 50 }).notNull().unique(),
+  zipCode: varchar("zip_code", { length: 10 }).notNull(),
+  routeName: text("route_name").notNull(),
+  city: text("city").notNull(),
+  state: varchar("state", { length: 2 }).notNull(),
+  residentialAddresses: integer("residential_addresses").notNull(),
+  businessAddresses: integer("business_addresses").default(0),
+  totalAddresses: integer("total_addresses").notNull(),
+  averageIncome: decimal("average_income", { precision: 10, scale: 2 }),
+  populationDensity: decimal("population_density", { precision: 10, scale: 2 }),
+  geographicArea: decimal("geographic_area", { precision: 10, scale: 2 }),
+  routeType: varchar("route_type", { length: 20 }).default('residential'),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Create insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -97,15 +116,23 @@ export const insertOrderItemSchema = createInsertSchema(orderItems).omit({
   id: true,
 });
 
+export const insertDemographicsSchema = createInsertSchema(demographics).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Create types from schemas
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertAddress = z.infer<typeof insertAddressSchema>;
 export type InsertSavedDesign = z.infer<typeof insertSavedDesignSchema>;
 export type InsertOrder = z.infer<typeof insertOrderSchema>;
 export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
+export type InsertDemographics = z.infer<typeof insertDemographicsSchema>;
 
 export type User = typeof users.$inferSelect;
 export type Address = typeof addresses.$inferSelect;
 export type SavedDesign = typeof savedDesigns.$inferSelect;
 export type Order = typeof orders.$inferSelect;
 export type OrderItem = typeof orderItems.$inferSelect;
+export type Demographic = typeof demographics.$inferSelect;

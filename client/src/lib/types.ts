@@ -31,9 +31,16 @@ export interface SavedDesign {
 }
 
 export interface USPSRoute {
-  id: string;
-  name: string;
-  addressCount: number;
+  id: number;
+  routeId: string;
+  routeName: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  residentialAddresses: number;
+  businessAddresses: number | null;
+  totalAddresses: number;
+  routeType: string | null;
 }
 
 export interface CartItem {

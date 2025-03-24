@@ -3,7 +3,8 @@ import {
   addresses, type Address, type InsertAddress,
   savedDesigns, type SavedDesign, type InsertSavedDesign,
   orders, type Order, type InsertOrder,
-  orderItems, type OrderItem, type InsertOrderItem
+  orderItems, type OrderItem, type InsertOrderItem,
+  demographics, type Demographic, type InsertDemographics
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
@@ -38,6 +39,14 @@ export interface IStorage {
   
   // Order items methods
   getOrderItems(orderId: number): Promise<OrderItem[]>;
+  
+  // Demographics methods for USPS routes
+  getDemographics(): Promise<Demographic[]>;
+  getDemographicsByZipCode(zipCode: string): Promise<Demographic[]>;
+  getDemographicsById(id: number): Promise<Demographic | undefined>;
+  createDemographic(demographic: InsertDemographics): Promise<Demographic>;
+  updateDemographic(id: number, demographic: Partial<InsertDemographics>): Promise<Demographic | undefined>;
+  deleteDemographic(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -185,6 +194,45 @@ export class DatabaseStorage implements IStorage {
   async getOrderItems(orderId: number): Promise<OrderItem[]> {
     return await db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
   }
+  
+  // Demographics methods for USPS routes
+  async getDemographics(): Promise<Demographic[]> {
+    return await db.select().from(demographics);
+  }
+  
+  async getDemographicsByZipCode(zipCode: string): Promise<Demographic[]> {
+    return await db.select().from(demographics).where(eq(demographics.zipCode, zipCode));
+  }
+  
+  async getDemographicsById(id: number): Promise<Demographic | undefined> {
+    const [demographic] = await db.select().from(demographics).where(eq(demographics.id, id));
+    return demographic;
+  }
+  
+  async createDemographic(insertDemographic: InsertDemographics): Promise<Demographic> {
+    const [demographic] = await db
+      .insert(demographics)
+      .values(insertDemographic)
+      .returning();
+    return demographic;
+  }
+  
+  async updateDemographic(id: number, demographic: Partial<InsertDemographics>): Promise<Demographic | undefined> {
+    const [updatedDemographic] = await db
+      .update(demographics)
+      .set({ ...demographic, updatedAt: new Date() })
+      .where(eq(demographics.id, id))
+      .returning();
+    return updatedDemographic;
+  }
+  
+  async deleteDemographic(id: number): Promise<boolean> {
+    const result = await db
+      .delete(demographics)
+      .where(eq(demographics.id, id))
+      .returning({ id: demographics.id });
+    return result.length > 0;
+  }
 }
 
 export class MemStorage implements IStorage {
@@ -193,11 +241,13 @@ export class MemStorage implements IStorage {
   private savedDesigns: Map<number, SavedDesign>;
   private orders: Map<number, Order>;
   private orderItems: Map<number, OrderItem[]>;
+  private demographics: Map<number, Demographic>;
   private currentUserId: number;
   private currentAddressId: number;
   private currentDesignId: number;
   private currentOrderId: number;
   private currentOrderItemId: number;
+  private currentDemographicId: number;
 
   constructor() {
     this.users = new Map();
@@ -205,11 +255,13 @@ export class MemStorage implements IStorage {
     this.savedDesigns = new Map();
     this.orders = new Map();
     this.orderItems = new Map();
+    this.demographics = new Map();
     this.currentUserId = 1;
     this.currentAddressId = 1;
     this.currentDesignId = 1;
     this.currentOrderId = 1;
     this.currentOrderItemId = 1;
+    this.currentDemographicId = 1;
   }
 
   // User methods
@@ -356,6 +408,51 @@ export class MemStorage implements IStorage {
   // Order items methods
   async getOrderItems(orderId: number): Promise<OrderItem[]> {
     return this.orderItems.get(orderId) || [];
+  }
+  
+  // Demographics methods for USPS routes
+  async getDemographics(): Promise<Demographic[]> {
+    return Array.from(this.demographics.values());
+  }
+  
+  async getDemographicsByZipCode(zipCode: string): Promise<Demographic[]> {
+    return Array.from(this.demographics.values()).filter(
+      (demographic) => demographic.zipCode === zipCode
+    );
+  }
+  
+  async getDemographicsById(id: number): Promise<Demographic | undefined> {
+    return this.demographics.get(id);
+  }
+  
+  async createDemographic(insertDemographic: InsertDemographics): Promise<Demographic> {
+    const id = this.currentDemographicId++;
+    const now = new Date();
+    const demographic: Demographic = {
+      ...insertDemographic,
+      id,
+      createdAt: now,
+      updatedAt: now
+    };
+    this.demographics.set(id, demographic);
+    return demographic;
+  }
+  
+  async updateDemographic(id: number, demographicUpdate: Partial<InsertDemographics>): Promise<Demographic | undefined> {
+    const demographic = this.demographics.get(id);
+    if (!demographic) return undefined;
+    
+    const updatedDemographic = {
+      ...demographic,
+      ...demographicUpdate,
+      updatedAt: new Date()
+    };
+    this.demographics.set(id, updatedDemographic);
+    return updatedDemographic;
+  }
+  
+  async deleteDemographic(id: number): Promise<boolean> {
+    return this.demographics.delete(id);
   }
 }
 

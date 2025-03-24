@@ -9,7 +9,8 @@ import { nanoid } from "nanoid";
 import { 
   insertUserSchema, 
   insertAddressSchema, 
-  insertSavedDesignSchema 
+  insertSavedDesignSchema,
+  insertDemographicsSchema
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -204,6 +205,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const createdOrder = await storage.createOrder(order, items);
       res.status(201).json(createdOrder);
     } catch (error) {
+      next(error);
+    }
+  });
+
+  // USPS Routes - Demographics data
+  app.get('/api/eddm/routes', async (req, res) => {
+    try {
+      const routes = await storage.getDemographics();
+      res.json(routes);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error fetching EDDM routes", error: error.message });
+    }
+  });
+
+  app.get('/api/eddm/routes/zip/:zipCode', async (req, res) => {
+    try {
+      const { zipCode } = req.params;
+      
+      if (!zipCode || zipCode.length < 5) {
+        return res.status(400).json({ message: "Valid ZIP code is required" });
+      }
+      
+      const routes = await storage.getDemographicsByZipCode(zipCode);
+      res.json(routes);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error fetching EDDM routes", error: error.message });
+    }
+  });
+
+  app.get('/api/eddm/routes/:id', async (req, res) => {
+    try {
+      const routeId = parseInt(req.params.id);
+      
+      if (isNaN(routeId)) {
+        return res.status(400).json({ message: "Invalid route ID" });
+      }
+      
+      const route = await storage.getDemographicsById(routeId);
+      
+      if (!route) {
+        return res.status(404).json({ message: "Route not found" });
+      }
+      
+      res.json(route);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error fetching EDDM route", error: error.message });
+    }
+  });
+
+  app.post('/api/eddm/routes', async (req, res, next) => {
+    try {
+      const routeData = insertDemographicsSchema.parse(req.body);
+      const route = await storage.createDemographic(routeData);
+      res.status(201).json(route);
+    } catch (error: any) {
       next(error);
     }
   });

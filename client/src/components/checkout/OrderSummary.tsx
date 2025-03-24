@@ -40,6 +40,12 @@ const OrderSummary = () => {
                  item.finishType === 'uv-both' ? ' High Gloss UV' : 
                  ' High Gloss UV Front'}
               </p>
+              {item.uspsRoutes && item.uspsRoutes.length > 0 && (
+                <p className="text-sm text-gray-600 mt-1">
+                  <span className="font-medium">USPS Routes:</span> {item.uspsRoutes.length} routes 
+                  ({item.uspsRoutes.reduce((sum, route) => sum + route.totalAddresses, 0).toLocaleString()} addresses)
+                </p>
+              )}
             </div>
             <div className="text-right ml-4">
               <p className="font-medium">{formatCurrency(item.totalPrice)}</p>
